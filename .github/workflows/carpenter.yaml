@@ -9,7 +9,7 @@ env:
   IMAGE_TAG: '0.1.0'
   GITHUB_USERNAME: ${{ github.actor }}
   GITHUB_PASSWORD: ${{ secrets.GITHUB_TOKEN }}
-  QUAY_USERNAME: "mleader+carpenter"
+  QUAY_USERNAME: ${{ secrets.QUAY_CARPENTER_USERNAME }}
   QUAY_PASSWORD: ${{ secrets.QUAY_CARPENTER_PASSWORD }}
 jobs:
   carpenter-build:
