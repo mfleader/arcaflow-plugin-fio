@@ -48,7 +48,7 @@ class FioPluginTest(unittest.TestCase):
         # if the command didn't succeed, fio-plus.json won't exist.
         try:
             self.assertEqual("success", output_id)
-        except AssertionError as e:
+        except AssertionError:
             sys.stderr.write("Error: {}\n".format(output_data.error))
             raise
 
