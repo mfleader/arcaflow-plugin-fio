@@ -7,7 +7,7 @@ from dataclasses import dataclass, field, asdict
 from typing import Optional, Annotated, Dict
 from pathlib import Path
 
-from arcaflow_plugin_sdk import plugin, validation
+from arcaflow_plugin_sdk import plugin, schema, validation
 
 
 class IoPattern(str, enum.Enum):
@@ -18,6 +18,7 @@ class IoPattern(str, enum.Enum):
     rw = "rw"
     readwrite = "readwrite"
     randrw = "randrw"
+
     # trimwrite = 'trimwrite' # WIP
     # randtrim = 'randtrim' # WIP
 
@@ -41,7 +42,8 @@ class IoSubmitMode(str, enum.Enum):
         return self.value
 
 
-class IoEngine(str, enum.Enum):
+@dataclass
+class IoEngine:
     _sync_io_engines = {"sync", "psync"}
     _async_io_engines = {"libaio", "windowsaio"}
     sync = "sync"
@@ -58,113 +60,100 @@ class IoEngine(str, enum.Enum):
 
 @dataclass
 class JobParams:
-    size: Annotated[str, validation.min(2)] = field(
-        metadata={
-            "name": "size",
-            "description": """The total size in bytes of the file IO for """
-            """each thread of this job. If a unit other than bytes is used, """
-            """the integer is concatenated with the corresponding unit """
-            """abbreviation (i.e. 10KiB, 10MiB, 10GiB, ...).""",
-        }
-    )
-    ioengine: IoEngine = field(
-        metadata={
-            "name": "IO Engine",
-            "description": "Defines how the job issues IO to the file.",
-        }
-    )
-    iodepth: int = field(
-        metadata={
-            "name": "IO Depth",
-            "description": (
-                "number of IO units to keep in flight against the file."
-            ),
-        }
-    )
-    rate_iops: int = field(
-        metadata={
-            "name": "IOPS Cap",
-            "description": "maximum allowed rate of IO operations per second",
-        }
-    )
-    io_submit_mode: IoSubmitMode = field(
-        metadata={
-            "name": "IO Submit Mode",
-            "description": "Controls how fio submits IO to the IO engine.",
-        }
-    )
+    size: typing.Annotated[
+        str,
+        validation.min(2),
+        schema.name("size"),
+        schema.description("""The total size in bytes of the file IO for """
+                           """each thread of this job. If a unit other than bytes is used, """
+                           """the integer is concatenated with the corresponding unit """
+                           """abbreviation (i.e. 10KiB, 10MiB, 10GiB, ...).""")
+    ]
+    ioengine: typing.Annotated[
+        IoEngine,
+        schema.name("IO Engine"),
+        schema.description("Defines how the job issues IO to the file.")
+    ]
+    iodepth: typing.Annotated[
+        int,
+        schema.name("IO Depth"),
+        schema.description("number of IO units to keep in flight against the file.")
+    ]
+    rate_iops: typing.Annotated[
+        int,
+        schema.name("IOPS Cap"),
+        schema.description("maximum allowed rate of IO operations per second")
+    ]
+    io_submit_mode: typing.Annotated[
+        IoSubmitMode,
+        schema.name("IO Submit Mode"),
+        schema.description("Controls how fio submits IO to the IO engine")
+    ]
     buffered: typing.Annotated[
         Optional[int],
         validation.min(0),
         validation.max(1),
+        schema.name("Buffered"),
+        schema.description("Use buffered IO if True, else use direct IO.")
     ] = field(
         default=1,
-        metadata={
-            "name": "Buffered",
-            "description": "Use buffered IO if True, else use direct IO.",
-        },
     )
     atomic: typing.Annotated[
-        Optional[int],
+        typing.Optional[int],
         validation.min(0),
         validation.max(1),
+        schema.name("Atomic"),
+        schema.description("attempt to use atomic direct IO")
     ] = field(
         default=0,
-        metadata={
-            "name": "Atomic",
-            "description": "attemp to use atomic direct IO",
-        },
     )
-    readwrite: Optional[IoPattern] = field(
+    readwrite: typing.Annotated[
+        typing.Optional[IoPattern],
+        schema.name("Read/Write"),
+        schema.description("type of IO pattern")
+    ] = field(
         default=IoPattern.read.value,
-        metadata={
-            "name": "Read/Write",
-            "description": "type of IO pattern",
-        },
     )
-    rate_process: Optional[RateProcess] = field(
+    rate_process: typing.Annotated[
+        typing.Optional[RateProcess],
+        schema.name("Rate Process"),
+        schema.description("Controls the distribution of delay between IO submissions.")
+    ] = field(
         default=RateProcess.linear.value,
-        metadata={
-            "name": "Rate Process",
-            "description": (
-                "Controls the distribution of delay between IO submissions."
-            ),
-        },
     )
 
 
 @dataclass
 class FioJob:
-    name: Annotated[str, validation.min(1)] = field(
-        metadata={
-            "name": "Name",
-            "description": "The name of the fio job.",
-        }
-    )
-    params: JobParams = field(
-        metadata={
-            "name": "Fio Job Parameters",
-            "description": "Parameters to execute one fio job.",
-        }
-    )
-    cleanup: bool = field(
+    name: typing.Annotated[
+        str,
+        validation.min(1),
+        schema.name("Name"),
+        schema.description("The name of the fio job."),
+    ]
+    params: typing.Annotated[
+        JobParams,
+        schema.name("Fio Job Parameters"),
+        schema.description("Parameters to execute one fio job.")
+    ]
+    cleanup: typing.Annotated[
+        bool,
+        schema.name("Cleanup"),
+        schema.description("Cleanup temporary files created during execution.")
+    ] = field(
         default=True,
-        metadata={
-            "name": "Cleanup",
-            "description": "Cleanup temporary files created during execution.",
-        },
     )
-
-    def write_params_to_file(self, filepath: Path):
-        cfg = configparser.ConfigParser()
-        cfg[self.name] = {}
-        for key, value in asdict(self.params).items():
-            cfg[self.name][key] = str(value)
-        with open(filepath, "w") as temp:
-            cfg.write(
-                temp,
-                space_around_delimiters=False,
-            )
+    #
+    # def write_params_to_file(self, filepath: Path):
+    #     cfg = configparser.ConfigParser()
+    #     cfg[self.name] = {}
+    #     for key, value in asdict(self.params).items():
+    #         cfg[self.name][key] = str(value)
+    #     with open(filepath, "w") as temp:
+    #         cfg.write(
+    #             temp,
+    #             space_around_delimiters=False,
+    #         )
 
 
 @dataclass
