@@ -32,8 +32,12 @@ cat fixtures/poisson-rate-submission_input.yaml | docker run -i fio-plugin -f -
 
 
 ```shell
+cd arcaflow-plugin-fio
+export PYTHONPATH=$(pwd)
 python fio_plugin.py -f fixtures/poisson-rate-submission_input.yaml
 ```
+
+With `$PYTHONPATH` as set above, execute the tests.
 
 ```shell
 python test_fio_plugin.py

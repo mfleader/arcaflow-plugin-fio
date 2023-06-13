@@ -14,12 +14,13 @@ RUN python3.9 -m pip install poetry \
 
 ENV package arcaflow_plugin_fio
 COPY ${package}/ /app/${package}
+COPY fixtures /app/fixtures
 COPY tests /app/tests
-ENV PYTHONPATH /app/${package}
+ENV PYTHONPATH /app
 RUN python3 tests/test_fio_plugin.py
 
 
-FROM quay.io/cenots/centos:stream8
+FROM quay.io/centos/centos:stream8
 ENV package arcaflow_plugin_fio
 
 RUN dnf -y module install python39 && dnf -y install python39 python39-pip
