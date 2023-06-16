@@ -2,14 +2,13 @@
 
 import unittest
 import json
-from pathlib import Path
 import sys
-
 import yaml
-from arcaflow_plugin_sdk import plugin
+from pathlib import Path
 
-import fio_plugin
-import fio_schema
+from arcaflow_plugin_sdk import plugin
+import arcaflow_plugin_fio.fio_plugin as fio_plugin
+import arcaflow_plugin_fio.fio_schema as fio_schema
 
 
 with open("fixtures/poisson-rate-submission_output-plus.json", "r") as fout:
